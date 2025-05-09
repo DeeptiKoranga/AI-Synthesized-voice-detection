@@ -3,82 +3,102 @@ const detectBtn = document.getElementById('detectBtn');
 const fileInput = document.getElementById('fileInput');
 const resultText = document.getElementById('resultText');
 const loader = document.getElementById('loader');
+const recordBtn = document.getElementById('recordBtn');
+const fileNameText = document.getElementById('fileNameText');
+const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-// Function to simulate the voice detection API call
-const detectVoice = async (file) => {
-  // Show loader while detecting
+let recordedBlob = null;
+let mediaRecorder;
+let chunks = [];
+
+// Function to detect voice from file or recording
+const detectVoice = async (inputFile) => {
   loader.style.display = 'block';
   resultText.textContent = '';
 
-  try{
+  try {
     const formData = new FormData();
-    formData.append('file',file);
+    formData.append('file', inputFile);
 
-    const response = await fetch('/predict',{
+    const response = await fetch('/predict', {
       method: 'POST',
       body: formData
     });
 
-    if(!response.ok){
-      throw new Error('Prediction Failed');
-    }
+    if (!response.ok) throw new Error('Prediction Failed');
 
     const result = await response.json();
-
     loader.style.display = 'none';
-    // resultText.textContent = `Detection Result: ${result}`;
-    console.log(result.label);
-    console.log(result.confidence);
+
     let displayConfidence;
-    if(result.label ==="Human Voice"){
+    if (result.label === "Human Voice") {
       displayConfidence = 100 - result.confidence;
-    } else{
+    } else {
       displayConfidence = result.confidence * 100;
     }
-    
-    
-    resultText.textContent = `Detection Result: ${result.label} (Confidence: ${(displayConfidence).toFixed(2)}%)`;
+
+    resultText.textContent = `Detection Result: ${result.label} (Confidence: ${displayConfidence.toFixed(2)}%)`;
 
   } catch (error) {
     loader.style.display = 'none';
     resultText.textContent = 'Error: ' + error.message;
   }
 };
-//   // Simulate an API call with a delay (replace this with your actual API call)
-//   setTimeout(() => {
-//     // Hide loader after the "API call" is complete
-//     loader.style.display = 'none';
 
-//     // Simulate the detection result (replace this with actual API response logic)
-//     const result = Math.random() > 0.5 ? 'AI-Generated' : 'Human Voice'; // Random result for demo purposes
-//     resultText.textContent = `Detection Result: ${result}`;
-//   }, 3000); // Simulating a 3-second delay for the "API call"
-// };
+// Event listener for file input
+fileInput.addEventListener('change', () => {
+  recordedBlob = null; // reset any previous recording
+  showFileName();
+});
 
-// Event listener for Detect Button
+// Show selected file name
+function showFileName() {
+  if (fileInput.files.length > 0) {
+    fileNameText.textContent = fileInput.files[0].name;
+    fileNameDisplay.style.display = 'flex';
+  } else {
+    fileNameDisplay.style.display = 'none';
+  }
+}
+
+// Event listener for detect button
 detectBtn.addEventListener('click', () => {
-  // Check if a file has been selected
-  if (!fileInput.files[0]) {
-    alert('Please select an audio file to detect!');
+  if (recordedBlob) {
+    const recordedFile = new File([recordedBlob], 'recording.wav', { type: 'audio/wav' });
+    detectVoice(recordedFile);
+  } else if (fileInput.files[0]) {
+    detectVoice(fileInput.files[0]);
+  } else {
+    alert('Please select or record an audio file to detect!');
+  }
+});
+
+// Record Button Toggle
+recordBtn.addEventListener('click', async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    recordBtn.textContent = 'Start Recording';
     return;
   }
 
-  const file = fileInput.files[0];
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    chunks = [];
 
-  // Call the detectVoice function with the selected file
-  detectVoice(file);
-});
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
 
+    mediaRecorder.onstop = () => {
+      recordedBlob = new Blob(chunks, { type: 'audio/wav' });
+      fileNameText.textContent = 'Recorded Audio';
+      fileNameDisplay.style.display = 'flex';
+    };
 
-function showFileName() {
-  const fileInput = document.getElementById('fileInput');
-  const display = document.getElementById('fileNameDisplay');
-  const text = document.getElementById('fileNameText');
-
-  if (fileInput.files.length > 0) {
-    text.textContent = fileInput.files[0].name;
-    display.style.display = 'flex';
-  } else {
-    display.style.display = 'none';
+    mediaRecorder.start();
+    recordBtn.textContent = 'Stop Recording';
+  } catch (err) {
+    alert('Microphone access denied or not supported.');
   }
-}
+});
