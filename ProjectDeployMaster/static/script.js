@@ -90,11 +90,19 @@ recordBtn.addEventListener('click', async () => {
       if (e.data.size > 0) chunks.push(e.data);
     };
 
-    mediaRecorder.onstop = () => {
-      recordedBlob = new Blob(chunks, { type: 'audio/wav' });
-      fileNameText.textContent = 'Recorded Audio';
-      fileNameDisplay.style.display = 'flex';
-    };
+  mediaRecorder.onstop = () => {
+  recordedBlob = new Blob(chunks, { type: 'audio/wav' });
+
+  // Set the audio source to preview the recorded audio
+  const audioURL = URL.createObjectURL(recordedBlob);
+  const audioPreview = document.getElementById('audioPreview');
+  audioPreview.src = audioURL;
+  audioPreview.style.display = 'block'; // Show the audio preview
+
+  fileNameText.textContent = 'Recorded Audio';
+  fileNameDisplay.style.display = 'flex';
+};
+
 
     mediaRecorder.start();
     recordBtn.textContent = 'Stop Recording';
