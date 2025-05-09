@@ -127,6 +127,42 @@ nav a:hover {
   font-weight: 600;
 }
 
+/* Recorder Button */
+#recordBtn {
+  background-color: #111;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+#recordBtn:hover {
+  background-color: #222;
+}
+
+#recordBtn i {
+  color: #f39c12;
+}
+
+/* Audio Preview */
+#audioPreview {
+  margin-top: 20px;
+  width: 100%;
+  outline: none;
+}
+
+
 /* Loader animation */
 .loader {
   border: 6px solid #eee;
